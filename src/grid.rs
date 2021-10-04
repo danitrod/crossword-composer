@@ -1,4 +1,3 @@
-
 pub struct Grid {
     pub slots: usize,
     pub words: Vec<Vec<usize>>,         // word -> ordered list of slots
@@ -28,7 +27,8 @@ impl Grid {
                 .iter()
                 .map(|w| *w.iter().max().unwrap())
                 .max()
-                .unwrap() + 1
+                .unwrap()
+                + 1
         } else {
             0
         };

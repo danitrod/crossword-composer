@@ -22,12 +22,23 @@ impl Index {
         let word_list = dict.words.get(&word_length).unwrap_or(&EMPTY_VEC2);
 
         for (i, w) in word_list.iter().enumerate() {
-            let key: Vec<char> = known_letters.iter().map(|j| w[*j]).collect();
-            let val: Vec<char> = unknown_letters.iter().map(|j| w[*j]).collect();
+            // an example to clarify:
+            // word: _ _ p l _
+            // known letters: 2, 3
+            // unknown letters: 0, 1, 4
 
+            // got: apple, games
+            let key: Vec<char> = known_letters.iter().map(|j| w[*j]).collect();
+            // key: [p, l], [m, e]
+            let val: Vec<char> = unknown_letters.iter().map(|j| w[*j]).collect();
+            // value: [a, p, e], [g, a, s]
+
+            // we know the keys will be constraints and can change depending on circumstances.
+            // so this map is indexable by the keys. genius!
             known_to_unknown
                 .entry(key)
                 .or_insert_with(Vec::new)
+                // The index of the word in the dictionary is also returned so it can be sent as final result
                 .push((i, val));
         }
 

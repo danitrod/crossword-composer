@@ -5,7 +5,7 @@ use std::collections::BTreeSet;
 
 struct SolverStep {
     pub index: Index,
-    pub input_slots: Vec<usize>,  // Vector of slot indices to pull as input.
+    pub input_slots: Vec<usize>, // Vector of slot indices to pull as input.
     pub output_slots: Vec<usize>, // Vector of slot indices to put output in.
 }
 
@@ -19,10 +19,7 @@ impl SolverState {
         let result = vec![' '; grid.slots];
         let words = vec![0; grid.num_words()];
 
-        SolverState {
-            result,
-            words,
-        }
+        SolverState { result, words }
     }
 }
 
@@ -48,29 +45,34 @@ fn generate_solver_steps(grid: &Grid, dict: &Dictionary) -> Vec<SolverStep> {
 
         remaining_words.remove(&max_idx);
 
+        // We know what is the next word to process (the one with most constraints).
+        // Now try to find it and go to the next one.
         let mut known_letters = Vec::new();
         let mut input_slots: Vec<usize> = Vec::new();
         let mut output_slots: Vec<usize> = Vec::new();
         for (i, slot_id) in grid.words[max_idx].iter().enumerate() {
             if known_slots.contains(slot_id) {
+                // If we already know what letter should be in this slot, use the letter.
                 known_letters.push(i);
                 input_slots.push(*slot_id);
             } else {
+                // If not, it is a new slot
                 known_slots.insert(*slot_id);
                 output_slots.push(*slot_id);
             }
 
             for word_id in &grid.slot_to_words[*slot_id] {
+                // Add the new constraints for future words
                 constraints[*word_id] += 1;
             }
         }
 
-        let index =
-            Index::new(known_letters, grid.words[max_idx].len(), &dict);
+        // index is a helper struct to better search through the dictionary.
+        let index = Index::new(known_letters, grid.words[max_idx].len(), &dict);
         solver_steps.push(SolverStep {
             index,
             input_slots,
-            output_slots
+            output_slots,
         })
     }
 
@@ -81,12 +83,17 @@ fn solve_step(state: &mut SolverState, steps: &Vec<SolverStep>, step: usize) -> 
     if step >= steps.len() {
         true
     } else {
-        let SolverStep {index, input_slots, output_slots} = &steps[step];
+        let SolverStep {
+            index,
+            input_slots,
+            output_slots,
+        } = &steps[step];
 
         let known_letters: Vec<char> = input_slots.iter().map(|j| state.result[*j]).collect();
 
         for (wi, attempt) in index.get(&known_letters) {
             if state.words[0..step].contains(wi) {
+                // Words can't be reused
                 continue;
             }
             state.words[step] = *wi;
@@ -96,7 +103,7 @@ fn solve_step(state: &mut SolverState, steps: &Vec<SolverStep>, step: usize) -> 
             }
 
             if solve_step(state, steps, step + 1) {
-                return true
+                return true;
             }
         }
 
@@ -105,6 +112,7 @@ fn solve_step(state: &mut SolverState, steps: &Vec<SolverStep>, step: usize) -> 
 }
 
 pub fn solve(grid: &Grid, dict: &Dictionary) -> Option<Vec<char>> {
+    // Takes: grid (list of words with slots) + dict (a map with key being an int and value being all words with key as length)
     let mut state: SolverState = SolverState::new(&grid);
     let steps = generate_solver_steps(&grid, &dict);
 

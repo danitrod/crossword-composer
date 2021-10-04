@@ -24,7 +24,7 @@ impl Solver {
         console_error_panic_hook::set_once();
 
         let words: Vec<String> = words_arr.iter().map(|d| d.as_string().unwrap()).collect();
-        let dict = Dictionary::from_vec(words);
+        let dict = Dictionary::from(words);
 
         Solver { dict }
     }

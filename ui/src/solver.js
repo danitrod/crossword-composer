@@ -1,55 +1,60 @@
-import {RunStatus} from './status'
+import { RunStatus } from './status';
 
 export class Solver {
-    async setup() {
-        let result = await fetch('/words.txt')
-        let text = await result.text()
-        this.wordlist = text.split('\n')
+  async setup() {
+    let result = await fetch('/words.txt');
+    let text = await result.text();
+    this.wordlist = text.split('\n');
 
-        this.workerBlob = await fetch('/build/worker.js').then((response) => response.blob())
-        this.wasmResponse = await fetch('/build/crossword_bg.wasm').then((response) => response.arrayBuffer())
+    this.workerBlob = await fetch('/build/worker.js').then((response) => response.blob());
+    this.wasmResponse = await fetch('/build/crossword_bg.wasm').then((response) =>
+      response.arrayBuffer()
+    );
+  }
+
+  constructor(onSolution) {
+    this.worker = null;
+    this.status = new RunStatus();
+    this.wordlist = null;
+    this.onSolution = onSolution;
+    this.setup();
+  }
+
+  terminate() {
+    if (this.worker) {
+      this.worker.terminate();
+      this.status.end();
     }
+  }
 
-    constructor(onSolution) {
-        this.worker = null
-        this.status = new RunStatus()
-        this.wordlist = null
-        this.onSolution = onSolution
-        this.setup()
+  messageReceived(message) {
+    console.log('received', message.data);
+    this.status.end();
+    this.onSolution(message);
+  }
+
+  getStatus() {
+    if (this.status.started) {
+      return `${this.status.getStatus()} (${this.status.getTime()})`;
+    } else {
+      return 'Click Start to begin filling.';
     }
+  }
 
-    terminate() {
-        if (this.worker) {
-            this.worker.terminate()
-            this.status.end()
-        }
-    }
+  solve(grid) {
+    this.terminate();
+    this.status.start();
+    //this.worker = new Worker('/build/worker.js')
+    this.worker = new Worker(URL.createObjectURL(this.workerBlob));
 
-    messageReceived(message) {
-        this.status.end()
-        this.onSolution(message)
-    }
+    console.log('sending', grid);
 
-    getStatus() {
-        if (this.status.started) {
-            return `${this.status.getStatus()} (${this.status.getTime()})`
-        } else {
-            return 'Click Start to begin filling.'
-        }
-    }
+    this.worker.onmessage = this.messageReceived.bind(this);
 
-    solve(grid) {
-        this.terminate()
-        this.status.start()
-        //this.worker = new Worker('/build/worker.js')
-        this.worker = new Worker(URL.createObjectURL(this.workerBlob))
-
-        this.worker.onmessage = this.messageReceived.bind(this)
-
-        this.worker.postMessage({
-            wordlist: this.wordlist,
-            wasm: this.wasmResponse,
-            grid
-        })
-    }
+    this.worker.postMessage({
+      wordlist: this.wordlist,
+      wasm: this.wasmResponse,
+      grid,
+    });
+  }
 }
