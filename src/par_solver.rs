@@ -1,14 +1,11 @@
-use rayon::iter::{
-    IntoParallelIterator, IntoParallelRefIterator, ParallelBridge, ParallelIterator,
-};
-
 use crate::dictionary::Dictionary;
 use crate::grid::Grid;
 use crate::index::Index;
 use std::collections::BTreeSet;
-use std::num;
 
-#[derive(Clone, Debug)]
+use rayon::prelude::*;
+
+#[derive(Debug)]
 struct SolverStep {
     pub index: Index,
     pub input_slots: Vec<usize>, // Vector of slot indices to pull as input.
@@ -79,24 +76,10 @@ fn generate_solver_steps(grid: &Grid, dict: &Dictionary) -> Vec<SolverStep> {
     solver_steps
 }
 
-fn solve_first_step() {
-    // TODO
-}
-
 fn solve_step(state: &mut SolverState, steps: &Vec<SolverStep>, step: usize) -> bool {
     if step >= steps.len() {
         true
     } else {
-        // println!(
-        //     "Solving step {} - input: {:?}, output: {:?}",
-        //     step,
-        //     steps[step]
-        //         .input_slots
-        //         .iter()
-        //         .map(|n| state.result[*n])
-        //         .collect::<Vec<char>>(),
-        //     steps[step].output_slots
-        // );
         let SolverStep {
             index,
             input_slots,
@@ -124,50 +107,20 @@ fn solve_step(state: &mut SolverState, steps: &Vec<SolverStep>, step: usize) -> 
     }
 }
 
-struct ParallelSolver
-// <'a, 'b>
-{
-    pub first_word_min_index: usize,
-    pub first_word_max_index: usize,
-    // pub steps: Vec<SolverStep>,
-    // pub grid: std::sync::Arc<&'a Grid>,
-    // pub dict: std::sync::Arc<&'b Dictionary>,
-}
-
 pub fn solve(grid: &Grid, dict: &Dictionary) -> Option<Vec<char>> {
+    let mut state: SolverState = SolverState::new(&grid);
     let steps = generate_solver_steps(&grid, &dict);
 
-    let num_first_words = dict.words.get(&steps[0].output_slots.len()).unwrap().len();
-    let step = (num_first_words as f64 / rayon::current_num_threads() as f64).ceil() as usize;
+    // TODO - divide the first step's dictionary into threads
+    (0..dict.words.get(&steps[0].output_slots.len()).unwrap().len())
+        .step_by(rayon::current_num_threads())
+        .for_each(|num| println!("Chunk: {}", num));
+    // Each thread receives: min and max ranges for first step,
+    // Or - The par_iter is by words on the dict with the length (better API, but worse approach - will have to be sending too many words to threads)
 
-    let par_solvers: Vec<ParallelSolver> = (0..=num_first_words)
-        .step_by(step)
-        .map(|num| ParallelSolver {
-            first_word_min_index: num,
-            first_word_max_index: num + step,
-            // steps: steps.clone(),
-            // grid: std::sync::Arc::new(grid.clone()),
-            // dict: std::sync::Arc::new(dict),
-        })
-        .collect();
-
-    // todo: check if this vec dividing approach is optimal
-    par_solvers.par_iter().find_any(|solver| {
-        (solver.first_word_min_index
-            ..std::cmp::min(solver.first_word_max_index, *&dict.words.len()))
-            .find(|i| {
-                let mut state: SolverState = SolverState::new(&grid);
-                let first_step = solve_step(&mut state, &steps, 0);
-
-                solve_step(&mut state, &steps, 1)
-            })
-            .is_some()
-    });
-
-    // [1, 2, 3, 4, 5, 6, 7]
-
-    // 3 threads
-
-    // [1, 2, 3], [4, 5, 6], [7]?
-    None
+    if solve_step(&mut state, &steps, 0) {
+        Some(state.result)
+    } else {
+        None
+    }
 }
