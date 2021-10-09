@@ -21,7 +21,7 @@ impl Dictionary {
     pub fn from_vec(v: Vec<String>) -> Dictionary {
         let mut words = HashMap::new();
         for raw_word in v.iter() {
-            let word: Vec<char> = raw_word.to_ascii_lowercase().chars().collect();
+            let word: Vec<char> = raw_word.to_lowercase().chars().collect();
 
             words.entry(word.len()).or_insert_with(Vec::new).push(word);
         }
@@ -37,13 +37,13 @@ pub mod tests {
     pub fn simple_dict() -> Dictionary {
         Dictionary::from_vec(vec![
             // 3:
-            String::from("foo"),    // 0
-            String::from("BAR"),    // 1
-            String::from("baz"),    // 2
+            String::from("foo"), // 0
+            String::from("BAR"), // 1
+            String::from("baz"), // 2
             // 4:
-            String::from("quad"),   // 0
-            String::from("plex"),   // 1
-            String::from("plan"),   // 2
+            String::from("quad"), // 0
+            String::from("plex"), // 1
+            String::from("plan"), // 2
         ])
     }
 
@@ -51,16 +51,22 @@ pub mod tests {
     fn test_dict() {
         let d = simple_dict();
 
-        assert_eq!(vec![
-            vec!['f', 'o', 'o'],
-            vec!['b', 'a', 'r'],
-            vec!['b', 'a', 'z'],
-        ], *d.words.get(&3).unwrap());
+        assert_eq!(
+            vec![
+                vec!['f', 'o', 'o'],
+                vec!['b', 'a', 'r'],
+                vec!['b', 'a', 'z'],
+            ],
+            *d.words.get(&3).unwrap()
+        );
 
-        assert_eq!(vec![
-            vec!['q', 'u', 'a', 'd'],
-            vec!['p', 'l', 'e', 'x'],
-            vec!['p', 'l', 'a', 'n'],
-        ], *d.words.get(&4).unwrap());
+        assert_eq!(
+            vec![
+                vec!['q', 'u', 'a', 'd'],
+                vec!['p', 'l', 'e', 'x'],
+                vec!['p', 'l', 'a', 'n'],
+            ],
+            *d.words.get(&4).unwrap()
+        );
     }
 }

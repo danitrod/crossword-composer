@@ -79,10 +79,6 @@ fn generate_solver_steps(grid: &Grid, dict: &Dictionary) -> Vec<SolverStep> {
     solver_steps
 }
 
-fn solve_first_step() {
-    // TODO
-}
-
 fn solve_step(state: &mut SolverState, steps: &Vec<SolverStep>, step: usize) -> bool {
     if step >= steps.len() {
         true
@@ -137,10 +133,13 @@ struct ParallelSolver
 pub fn solve(grid: &Grid, dict: &Dictionary) -> Option<Vec<char>> {
     let steps = generate_solver_steps(&grid, &dict);
 
-    let num_first_words = dict.words.get(&steps[0].output_slots.len()).unwrap().len();
-    let step = (num_first_words as f64 / rayon::current_num_threads() as f64).ceil() as usize;
+    // TODO: treat unwrap
+    let first_word_possibilities = dict.words.get(&steps[0].output_slots.len()).unwrap();
+    // todo: check if this vec dividing approach is optimal
+    let step = (first_word_possibilities.len() as f64 / rayon::current_num_threads() as f64).ceil()
+        as usize;
 
-    let par_solvers: Vec<ParallelSolver> = (0..=num_first_words)
+    let par_solvers: Vec<ParallelSolver> = (0..=first_word_possibilities.len())
         .step_by(step)
         .map(|num| ParallelSolver {
             first_word_min_index: num,
@@ -151,14 +150,13 @@ pub fn solve(grid: &Grid, dict: &Dictionary) -> Option<Vec<char>> {
         })
         .collect();
 
-    // todo: check if this vec dividing approach is optimal
     par_solvers.par_iter().find_any(|solver| {
         (solver.first_word_min_index
             ..std::cmp::min(solver.first_word_max_index, *&dict.words.len()))
-            .find(|i| {
+            .find(|&i| {
                 let mut state: SolverState = SolverState::new(&grid);
-                let first_step = solve_step(&mut state, &steps, 0);
 
+                state.words.push(first_word_possibilities[i]);
                 solve_step(&mut state, &steps, 1)
             })
             .is_some()
