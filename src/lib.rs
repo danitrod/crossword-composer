@@ -74,7 +74,11 @@ mod tests {
             .map(|str| str.to_string())
             .collect();
 
-        let result = solver::solve(&grid, &Dictionary::from_vec(words)).unwrap();
+        let result = solver::solve(&grid, &Dictionary::from_vec(words));
+
+        assert!(result.is_some());
+
+        let result = result.unwrap();
 
         println!(
             "Result: {:?}",
@@ -114,7 +118,9 @@ mod tests {
             .map(|str| str.to_string())
             .collect();
 
-        let result = solver::solve(&grid, &Dictionary::from_vec(words)).unwrap();
+        let result = solver::solve(&grid, &Dictionary::from_vec(words));
+        assert!(result.is_some());
+        let result = result.unwrap();
 
         println!(
             "Result: {:?}",
