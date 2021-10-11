@@ -4,6 +4,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import livereload from 'rollup-plugin-livereload';
 import { terser } from 'rollup-plugin-terser';
 import copy from 'rollup-plugin-copy';
+import OMT from '@surma/rollup-plugin-off-main-thread';
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -12,7 +13,7 @@ export default [
     input: 'src/worker.js',
     output: {
       sourcemap: false, // otherwise the .map.js file is requested on every action.
-      format: 'iife',
+      format: 'amd',
       name: 'app',
       dir: 'public/build/',
     },
@@ -21,7 +22,7 @@ export default [
     input: 'src/main.js',
     output: {
       sourcemap: true,
-      format: 'iife',
+      format: 'amd',
       name: 'app',
       dir: 'public/build/',
     },
@@ -50,6 +51,7 @@ export default [
         dedupe: ['svelte'],
       }),
       commonjs(),
+      OMT(),
 
       // In dev mode, call `npm run start` once
       // the bundle has been generated
