@@ -11,10 +11,12 @@
 #   shared memory, passive segments, etc.
 
 RUSTFLAGS='-C target-feature=+atomics,+bulk-memory,+mutable-globals' \
-  cargo build --target wasm32-unknown-unknown --release -Z build-std=std,panic_abort
+  rustup run nightly-2021-07-29 \
+  wasm-pack build --target web \
+  -- -Z build-std=panic_abort,std
 
-# Note the usage of `--target no-modules` here which is required for passing
-# the memory import to each wasm module.
-wasm-bindgen ./target/wasm32-unknown-unknown/release/crossword.wasm \
-  --out-dir . \
-  --target no-modules
+# # Note the usage of `--target no-modules` here which is required for passing
+# # the memory import to each wasm module.
+# wasm-bindgen ./target/wasm32-unknown-unknown/release/crossword.wasm \
+#   --out-dir . \
+#   --target no-modules

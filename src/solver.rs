@@ -79,16 +79,16 @@ fn solve_step(state: &mut SolverState, steps: &Vec<SolverStep>, step: usize) -> 
     if step >= steps.len() {
         true
     } else {
-        println!(
-            "Solving step {} - input: {:?}, output: {:?}",
-            step,
-            steps[step]
-                .input_slots
-                .iter()
-                .map(|n| state.result[*n])
-                .collect::<Vec<char>>(),
-            steps[step].output_slots
-        );
+        // println!(
+        //     "Solving step {} - input: {:?}, output: {:?}",
+        //     step,
+        //     steps[step]
+        //         .input_slots
+        //         .iter()
+        //         .map(|n| state.result[*n])
+        //         .collect::<Vec<char>>(),
+        //     steps[step].output_slots
+        // );
         let SolverStep {
             index,
             input_slots,

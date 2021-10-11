@@ -14,6 +14,8 @@ extern crate console_error_panic_hook;
 
 use wasm_bindgen::prelude::*;
 
+pub use wasm_bindgen_rayon::init_thread_pool;
+
 #[wasm_bindgen]
 pub struct Solver {
     dict: Dictionary,
@@ -162,9 +164,9 @@ mod tests {
             vec![26, 27, 28, 29],
             vec![30, 31, 32, 33],
             vec![34, 40],
-            // vec![34, 35, 36, 37, 38, 39],
-            // vec![35, 41],
-            // vec![40, 41, 42, 43, 44, 45],
+            vec![34, 35, 36, 37, 38, 39],
+            vec![35, 41],
+            vec![40, 41, 42, 43, 44, 45],
         ];
         let grid = grid::Grid::new(slot_words.clone());
 
