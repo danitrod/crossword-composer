@@ -137,7 +137,6 @@ pub fn solve(grid: &Grid, dict: &Dictionary) -> Option<Vec<char>> {
     let res = (0..first_word_possibilities.len())
         .into_par_iter()
         .find_map_any(|i| {
-            println!("Mapping {}", i);
             let mut state: SolverState = SolverState::new(&grid);
 
             state.words.push(i);
