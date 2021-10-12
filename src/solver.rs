@@ -1,11 +1,12 @@
 use crate::dictionary::Dictionary;
 use crate::grid::Grid;
 use crate::index::Index;
+use rayon::prelude::*;
 use std::collections::BTreeSet;
 
 struct SolverStep {
     pub index: Index,
-    pub input_slots: Vec<usize>,  // Vector of slot indices to pull as input.
+    pub input_slots: Vec<usize>, // Vector of slot indices to pull as input.
     pub output_slots: Vec<usize>, // Vector of slot indices to put output in.
 }
 
@@ -19,10 +20,7 @@ impl SolverState {
         let result = vec![' '; grid.slots];
         let words = vec![0; grid.num_words()];
 
-        SolverState {
-            result,
-            words,
-        }
+        SolverState { result, words }
     }
 }
 
@@ -65,12 +63,11 @@ fn generate_solver_steps(grid: &Grid, dict: &Dictionary) -> Vec<SolverStep> {
             }
         }
 
-        let index =
-            Index::new(known_letters, grid.words[max_idx].len(), &dict);
+        let index = Index::new(known_letters, grid.words[max_idx].len(), &dict);
         solver_steps.push(SolverStep {
             index,
             input_slots,
-            output_slots
+            output_slots,
         })
     }
 
@@ -81,7 +78,21 @@ fn solve_step(state: &mut SolverState, steps: &Vec<SolverStep>, step: usize) -> 
     if step >= steps.len() {
         true
     } else {
-        let SolverStep {index, input_slots, output_slots} = &steps[step];
+        // println!(
+        //     "Solving step {} - input: {:?}, output: {:?}",
+        //     step,
+        //     steps[step]
+        //         .input_slots
+        //         .iter()
+        //         .map(|n| state.result[*n])
+        //         .collect::<Vec<char>>(),
+        //     steps[step].output_slots
+        // );
+        let SolverStep {
+            index,
+            input_slots,
+            output_slots,
+        } = &steps[step];
 
         let known_letters: Vec<char> = input_slots.iter().map(|j| state.result[*j]).collect();
 
@@ -96,7 +107,7 @@ fn solve_step(state: &mut SolverState, steps: &Vec<SolverStep>, step: usize) -> 
             }
 
             if solve_step(state, steps, step + 1) {
-                return true
+                return true;
             }
         }
 
@@ -104,13 +115,64 @@ fn solve_step(state: &mut SolverState, steps: &Vec<SolverStep>, step: usize) -> 
     }
 }
 
+struct ParallelSolver
+// <'a, 'b>
+{
+    pub first_word_min_index: usize,
+    pub first_word_max_index: usize,
+    // pub steps: Vec<SolverStep>,
+    // pub grid: std::sync::Arc<&'a Grid>,
+    // pub dict: std::sync::Arc<&'b Dictionary>,
+}
+
 pub fn solve(grid: &Grid, dict: &Dictionary) -> Option<Vec<char>> {
-    let mut state: SolverState = SolverState::new(&grid);
     let steps = generate_solver_steps(&grid, &dict);
 
-    if solve_step(&mut state, &steps, 0) {
-        Some(state.result)
-    } else {
-        None
-    }
+    // TODO: treat unwrap
+    let first_word_possibilities = dict.words.get(&steps[0].output_slots.len()).unwrap();
+    // todo: check if this vec dividing approach is optimal
+    let step = (first_word_possibilities.len() as f64 / rayon::current_num_threads() as f64).ceil()
+        as usize;
+
+    let par_solvers: Vec<ParallelSolver> = (0..=first_word_possibilities.len())
+        .step_by(step)
+        .map(|num| ParallelSolver {
+            first_word_min_index: num,
+            first_word_max_index: num + step,
+            // steps: steps.clone(),
+            // grid: std::sync::Arc::new(grid.clone()),
+            // dict: std::sync::Arc::new(dict),
+        })
+        .collect();
+
+    // println!("solvers: {:?}", par_solvers);
+
+    let result = par_solvers.par_iter().find_map_any(|solver| {
+        (solver.first_word_min_index
+            ..std::cmp::min(solver.first_word_max_index, first_word_possibilities.len()))
+            .find_map(|i| {
+                let mut state: SolverState = SolverState::new(&grid);
+
+                state.words.push(i);
+
+                // Add the word's letters to result
+                for (out_slot, letter) in steps[0]
+                    .output_slots
+                    .iter()
+                    .zip(&first_word_possibilities[i])
+                {
+                    state.result[*out_slot] = *letter;
+                }
+
+                if solve_step(&mut state, &steps, 1) {
+                    Some(state.result)
+                } else {
+                    None
+                }
+            })
+    });
+
+    // println!("Result: {:?}", result);
+
+    result
 }
