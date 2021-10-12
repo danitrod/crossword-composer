@@ -13,7 +13,7 @@ export default [
     input: 'src/worker.js',
     output: {
       sourcemap: false, // otherwise the .map.js file is requested on every action.
-      format: 'amd',
+      format: 'esm',
       name: 'app',
       dir: 'public/build/',
     },
@@ -22,7 +22,7 @@ export default [
     input: 'src/main.js',
     output: {
       sourcemap: true,
-      format: 'amd',
+      format: 'esm',
       name: 'app',
       dir: 'public/build/',
     },

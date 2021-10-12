@@ -10,7 +10,6 @@ class Cell {
 
 export class Crossword {
   constructor(dimension, onGridChanged) {
-    console.log('creating sw');
     this.dimension = dimension;
     this.grid = new Array(dimension)
       .fill(0)

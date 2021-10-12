@@ -1,5 +1,7 @@
 import init, * as cw from '../../pkg/crossword';
 
+console.log('[worker.js] initializing');
+
 self.onmessage = ({ data }) => {
   console.log('got message');
   init(data.wasm).then(() => {

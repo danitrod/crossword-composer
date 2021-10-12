@@ -1,4 +1,5 @@
 import { RunStatus } from './status';
+// import * as Comlink from 'comlink';
 
 export class Solver {
   async setup() {
@@ -6,10 +7,15 @@ export class Solver {
     let text = await result.text();
     this.wordlist = text.split('\n');
 
-    this.workerBlob = await fetch('/build/worker.js').then((response) => response.blob());
-    this.wasmResponse = await fetch('/build/crossword_bg.wasm').then((response) =>
-      response.arrayBuffer()
-    );
+    // this.workerBlob = await fetch('/build/worker.js').then((response) => response.blob());
+    // this.workerHandlers = await Comlink.wrap(
+    //   new Worker(new URL('./wasm-worker.js', import.meta.url), {
+    //     type: 'module',
+    //   })
+    // ).handlers;
+    this.wasmResponse = await fetch('/build/crossword_bg.wasm').then((response) => {
+      return response.arrayBuffer();
+    });
   }
 
   constructor(onSolution) {
@@ -43,7 +49,7 @@ export class Solver {
   solve(grid) {
     this.terminate();
     this.status.start();
-    this.worker = new Worker(URL.createObjectURL(this.workerBlob));
+    this.worker = new Worker('/build/worker.js');
 
     this.worker.onmessage = this.messageReceived.bind(this);
 
