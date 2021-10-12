@@ -126,6 +126,8 @@ struct ParallelSolver
 }
 
 pub fn solve(grid: &Grid, dict: &Dictionary) -> Option<Vec<char>> {
+    #[cfg(feature = "web-parallel")]
+    use web_sys::console;
     let steps = generate_solver_steps(&grid, &dict);
 
     // TODO: treat unwrap
@@ -147,7 +149,15 @@ pub fn solve(grid: &Grid, dict: &Dictionary) -> Option<Vec<char>> {
 
     // println!("solvers: {:?}", par_solvers);
 
-    let result = par_solvers.par_iter().find_map_any(|solver| {
+    let result = par_solvers.into_par_iter().find_map_any(|solver| {
+        #[cfg(feature = "web-parallel")]
+        console::log_1(
+            &format!(
+                "[Thread] Solving from {} to {}",
+                solver.first_word_min_index, solver.first_word_max_index
+            )
+            .into(),
+        );
         (solver.first_word_min_index
             ..std::cmp::min(solver.first_word_max_index, first_word_possibilities.len()))
             .find_map(|i| {
@@ -165,6 +175,18 @@ pub fn solve(grid: &Grid, dict: &Dictionary) -> Option<Vec<char>> {
                 }
 
                 if solve_step(&mut state, &steps, 1) {
+                    #[cfg(feature = "web-parallel")]
+                    console::log_1(
+                        &format!(
+                            "[Worker WASM Thread] [{}..{}] solved",
+                            solver.first_word_min_index, solver.first_word_max_index
+                        )
+                        .into(),
+                    );
+                    println!(
+                        "Found solution from {}, {}",
+                        solver.first_word_min_index, solver.first_word_max_index
+                    );
                     Some(state.result)
                 } else {
                     None
@@ -172,6 +194,9 @@ pub fn solve(grid: &Grid, dict: &Dictionary) -> Option<Vec<char>> {
             })
     });
 
+    #[cfg(feature = "web-parallel")]
+    console::log_1(&format!("[Main WASM Thread] par_iter ended").into());
+    println!("Finalized par_iter");
     // println!("Result: {:?}", result);
 
     result
