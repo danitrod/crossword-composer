@@ -79,16 +79,16 @@ fn solve_step(state: &mut SolverState, steps: &Vec<SolverStep>, step: usize) -> 
     if step >= steps.len() {
         true
     } else {
-        println!(
-            "Solving step {} - input: {:?}, output: {:?}",
-            step,
-            steps[step]
-                .input_slots
-                .iter()
-                .map(|n| state.result[*n])
-                .collect::<Vec<char>>(),
-            steps[step].output_slots
-        );
+        // println!(
+        //     "Solving step {} - input: {:?}, output: {:?}",
+        //     step,
+        //     steps[step]
+        //         .input_slots
+        //         .iter()
+        //         .map(|n| state.result[*n])
+        //         .collect::<Vec<char>>(),
+        //     steps[step].output_slots
+        // );
         let SolverStep {
             index,
             input_slots,
@@ -132,49 +132,34 @@ pub fn solve(grid: &Grid, dict: &Dictionary) -> Option<Vec<char>> {
 
     // TODO: treat unwrap
     let first_word_possibilities = dict.words.get(&steps[0].output_slots.len()).unwrap();
-    // todo: check if this vec dividing approach is optimal
-    let step = (first_word_possibilities.len() as f64 / rayon::current_num_threads() as f64).ceil()
-        as usize;
 
-    let par_solvers: Vec<ParallelSolver> = (0..=first_word_possibilities.len())
-        .step_by(step)
-        .map(|num| ParallelSolver {
-            first_word_min_index: num,
-            first_word_max_index: num + step,
-            // steps: steps.clone(),
-            // grid: std::sync::Arc::new(grid.clone()),
-            // dict: std::sync::Arc::new(dict),
-        })
-        .collect();
+    println!("Total length: {}", first_word_possibilities.len());
+    let res = (0..first_word_possibilities.len())
+        .into_par_iter()
+        .find_map_any(|i| {
+            println!("Mapping {}", i);
+            let mut state: SolverState = SolverState::new(&grid);
 
-    println!("solvers: {:?}", par_solvers);
+            state.words.push(i);
 
-    let result = par_solvers.par_iter().find_map_any(|solver| {
-        (solver.first_word_min_index
-            ..std::cmp::min(solver.first_word_max_index, first_word_possibilities.len()))
-            .find_map(|i| {
-                let mut state: SolverState = SolverState::new(&grid);
+            // Add the word's letters to result
+            for (out_slot, letter) in steps[0]
+                .output_slots
+                .iter()
+                .zip(&first_word_possibilities[i])
+            {
+                state.result[*out_slot] = *letter;
+            }
 
-                state.words.push(i);
+            if solve_step(&mut state, &steps, 1) {
+                println!("Found from {}", i);
+                Some(state.result)
+            } else {
+                None
+            }
+        });
 
-                // Add the word's letters to result
-                for (out_slot, letter) in steps[0]
-                    .output_slots
-                    .iter()
-                    .zip(&first_word_possibilities[i])
-                {
-                    state.result[*out_slot] = *letter;
-                }
+    println!("Ended");
 
-                if solve_step(&mut state, &steps, 1) {
-                    Some(state.result)
-                } else {
-                    None
-                }
-            })
-    });
-
-    println!("Result: {:?}", result);
-
-    result
+    res
 }

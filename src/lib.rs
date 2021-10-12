@@ -162,9 +162,123 @@ mod tests {
             vec![26, 27, 28, 29],
             vec![30, 31, 32, 33],
             vec![34, 40],
-            // vec![34, 35, 36, 37, 38, 39],
-            // vec![35, 41],
-            // vec![40, 41, 42, 43, 44, 45],
+            vec![34, 35, 36, 37, 38, 39],
+            vec![35, 41],
+            vec![40, 41, 42, 43, 44, 45],
+        ];
+        let grid = grid::Grid::new(slot_words.clone());
+
+        let words: Vec<String> = std::fs::read_to_string("./ui/public/words.txt")
+            .unwrap()
+            .split('\n')
+            .map(|str| str.to_string())
+            .collect();
+
+        let result = solver::solve(&grid, &Dictionary::from_vec(words));
+        assert!(result.is_some());
+        let result = result.unwrap();
+
+        println!(
+            "Result: {:?}",
+            slot_words
+                .into_iter()
+                .map(|v| v.into_iter().map(|n| result[n]).collect())
+                .collect::<Vec<Vec<char>>>()
+        );
+    }
+
+    #[test]
+    fn real_world_crossword() {
+        let slot_words = vec![
+            vec![0, 7, 16, 26, 35, 43, 53, 61, 70, 80],
+            vec![0, 1],
+            vec![1, 8, 17, 27, 36, 44, 54, 62, 71],
+            vec![2, 11, 21, 31],
+            vec![2, 3, 4, 5, 6],
+            vec![3, 12, 22, 32],
+            vec![4, 13, 23],
+            vec![5, 14],
+            vec![7, 8, 9],
+            vec![9, 18, 28, 37, 45, 55],
+            vec![10, 20, 30, 39, 47],
+            vec![10, 11, 12, 13, 14],
+            vec![15, 25, 34, 42, 52, 60, 69, 79, 88, 95],
+            vec![16, 17, 18, 19, 20, 21, 22, 23],
+            vec![19, 29, 38, 46],
+            vec![24, 33, 41, 51, 59, 68, 78, 87, 94],
+            vec![24, 25],
+            vec![26, 27, 28, 29, 30, 31, 32],
+            vec![33, 34],
+            vec![35, 36, 37, 38, 39],
+            vec![40, 50, 58, 67, 77, 86],
+            vec![40, 41, 42],
+            vec![43, 44, 45, 46, 47],
+            vec![48, 56, 65, 75, 85],
+            vec![48, 49, 50, 51, 52],
+            vec![49, 57, 66, 76],
+            vec![53, 54, 55],
+            vec![56, 57, 58, 59, 60],
+            vec![61, 62],
+            vec![63, 73, 83, 92],
+            vec![63, 64, 65, 66, 67, 68, 69],
+            vec![64, 74, 84, 93],
+            vec![70, 71],
+            vec![72, 82, 91],
+            vec![72, 73, 74, 75, 76, 77, 78, 79],
+            vec![81, 90],
+            vec![81, 82, 83, 84, 85],
+            vec![86, 87, 88],
+            vec![89, 90, 91, 92, 93],
+            vec![94, 95],
+        ];
+        let grid = grid::Grid::new(slot_words.clone());
+
+        let words: Vec<String> = std::fs::read_to_string("./ui/public/words.txt")
+            .unwrap()
+            .split('\n')
+            .map(|str| str.to_string())
+            .collect();
+
+        let result = solver::solve(&grid, &Dictionary::from_vec(words));
+        assert!(result.is_some());
+        let result = result.unwrap();
+
+        println!(
+            "Result: {:?}",
+            slot_words
+                .into_iter()
+                .map(|v| v.into_iter().map(|n| result[n]).collect())
+                .collect::<Vec<Vec<char>>>()
+        );
+    }
+
+    #[test]
+    fn crossword_8x8() {
+        let slot_words = vec![
+            vec![0, 8, 15, 21, 27],
+            vec![0, 1, 2, 3, 4, 5, 6, 7],
+            vec![1, 9, 16, 22, 28, 33, 39, 47],
+            vec![2, 10],
+            vec![3, 11, 17, 23, 29, 35, 41, 49],
+            vec![4, 12, 18, 24, 30, 36, 42, 50],
+            vec![5, 13, 19],
+            vec![6, 14, 20, 25, 31, 37, 44, 52],
+            vec![8, 9, 10, 11, 12, 13, 14],
+            vec![15, 16],
+            vec![17, 18, 19, 20],
+            vec![21, 22],
+            vec![23, 24],
+            vec![25, 26],
+            vec![26, 32, 38, 45, 53],
+            vec![27, 28],
+            vec![29, 30],
+            vec![31, 32],
+            vec![33, 34, 35, 36],
+            vec![34, 40, 48],
+            vec![37, 38],
+            vec![39, 40, 41, 42, 43, 44, 45],
+            vec![43, 51],
+            vec![46, 47, 48, 49, 50, 51, 52, 53],
         ];
         let grid = grid::Grid::new(slot_words.clone());
 
